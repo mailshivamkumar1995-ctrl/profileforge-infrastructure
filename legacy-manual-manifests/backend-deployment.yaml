@@ -1,0 +1,104 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: profileforge-backend
+  namespace: profileforge-dev
+  labels:
+    app: profileforge-backend
+
+spec:
+  replicas: 1
+
+  selector:
+    matchLabels:
+      app: profileforge-backend
+
+  template:
+    metadata:
+      labels:
+        app: profileforge-backend
+
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+
+      containers:
+        - name: backend
+          image: profileforge-backend:local
+          imagePullPolicy: IfNotPresent
+
+          ports:
+            - name: http
+              containerPort: 8000
+
+          env:
+            - name: DJANGO_SETTINGS_MODULE
+              value: "config.settings.production"
+
+            - name: DEBUG
+              value: "False"
+
+            - name: SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: django-secret
+                  key: secret-key
+
+            - name: ALLOWED_HOSTS
+              value: "profileforge.local,localhost,127.0.0.1"
+
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: backend-secret
+                  key: database-url
+
+            - name: REDIS_URL
+              value: "redis://redis:6379"
+
+          livenessProbe:
+            tcpSocket:
+              port: 8000
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
+
+          readinessProbe:
+            tcpSocket:
+              port: 8000
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: profileforge-backend
+  namespace: profileforge-dev
+  labels:
+    app: profileforge-backend
+
+spec:
+  type: ClusterIP
+
+  selector:
+    app: profileforge-backend
+
+  ports:
+    - name: http
+      protocol: TCP
+      port: 8000
+      targetPort: 8000

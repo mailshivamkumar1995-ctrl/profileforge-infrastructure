@@ -1,0 +1,80 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: profileforge-celery-beat
+  namespace: profileforge-dev
+  labels:
+    app: profileforge-celery-beat
+
+spec:
+  replicas: 1
+
+  selector:
+    matchLabels:
+      app: profileforge-celery-beat
+
+  template:
+    metadata:
+      labels:
+        app: profileforge-celery-beat
+
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+
+      containers:
+        - name: celery-beat
+          image: profileforge-backend:local
+          imagePullPolicy: IfNotPresent
+
+          command:
+            - celery
+
+          args:
+            - -A
+            - config.celery_app
+            - beat
+            - -l
+            - info
+            - --schedule=/data/celerybeat/celerybeat-schedule
+
+          volumeMounts:
+            - name: celerybeat-storage
+              mountPath: /data/celerybeat
+
+          env:
+            - name: DJANGO_SETTINGS_MODULE
+              value: "config.settings.production"
+
+            - name: DEBUG
+              value: "False"
+
+            - name: SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: django-secret
+                  key: secret-key
+
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: backend-secret
+                  key: database-url
+
+            - name: REDIS_URL
+              value: "redis://redis:6379"
+
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              cpu: 250m
+              memory: 256Mi
+
+      volumes:
+        - name: celerybeat-storage
+          persistentVolumeClaim:
+            claimName: celerybeat-pvc

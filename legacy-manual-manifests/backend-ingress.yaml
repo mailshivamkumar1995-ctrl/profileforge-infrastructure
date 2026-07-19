@@ -1,0 +1,19 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: profileforge-backend
+  namespace: profileforge-dev
+spec:
+  ingressClassName: nginx
+
+  rules:
+    - host: profileforge.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: profileforge-backend
+                port:
+                  number: 8000

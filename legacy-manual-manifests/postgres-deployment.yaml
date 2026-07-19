@@ -1,0 +1,51 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres
+  namespace: profileforge-dev
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres          # must match the Pod template's labels below
+  template:                  # ← this is the actual Pod definition
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:16-alpine
+          ports:
+            - containerPort: 5432
+          env:
+            - name: POSTGRES_DB
+              value: profileforge_db
+            - name: POSTGRES_USER
+              value: profileforge_user
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:        # passwords come from Secrets, not plain env — flag this in interviews
+                  name: postgres-secret
+                  key: password
+          volumeMounts:
+            - name: postgres-storage
+              mountPath: /var/lib/postgresql/data
+      volumes:
+        - name: postgres-storage
+          persistentVolumeClaim:
+            claimName: postgres-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres
+  namespace: profileforge-dev
+spec:
+  selector:
+    app: postgres
+  ports:
+    - protocol: TCP
+      port: 5432
+      targetPort: 5432
+  type: ClusterIP
