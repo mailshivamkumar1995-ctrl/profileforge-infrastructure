@@ -88,6 +88,15 @@ resource "kubernetes_deployment" "profileforge_backend" {
             value = "redis://redis:6379"
           }
 
+          env {
+            name = "POD_IP"
+            value_from {
+              field_ref {
+                field_path = "status.podIP"
+              }
+            }
+          }
+
           liveness_probe {
             tcp_socket {
               port = 8000
