@@ -7,6 +7,6 @@ resource "kubernetes_secret" "backend_secret" {
   type = "Opaque"
 
   data = {
-    database-url = "postgresql://profileforge_user:REDACTED@postgres:5432/profileforge_db"
+    database-url = var.backend_database_url
   }
 }

@@ -7,6 +7,6 @@ resource "kubernetes_secret" "postgres_secret" {
   type = "Opaque"
 
   data = {
-    password = "REDACTED"
+    password = var.postgres_password
   }
 }

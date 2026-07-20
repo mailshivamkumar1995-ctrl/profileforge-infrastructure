@@ -5,6 +5,6 @@ resource "kubernetes_secret" "django_secret" {
   }
   type = "Opaque"
   data = {
-    secret-key = "WctIMavepYT3--kihcJ8_xJNDuiR56k-QNf4vrAYslZuesyrwxDdt3ksOU-m1pU3ayOs6R8Qg3HbUm-HOnlEnQ"
+    secret-key = var.django_secret_key
   }
 }
